@@ -1,0 +1,14 @@
+{
+  "code": "F3",
+  "titre": "Annuler un rendez-vous",
+  "enTantQue": "cliente",
+  "jeVeux": "annuler mon rendez-vous jusqu’à la veille",
+  "afinDe": "libérer le créneau",
+  "criteres": [
+    {
+      "etantDonne": "un rendez-vous demain",
+      "quand": "je l’annule ce soir",
+      "alors": "le créneau est libéré"
+    }
+  ]
+}
