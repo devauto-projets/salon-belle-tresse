@@ -1,0 +1,14 @@
+{
+  "code": "F1",
+  "titre": "Réserver un rendez-vous",
+  "enTantQue": "cliente",
+  "jeVeux": "choisir une prestation, une coiffeuse et un créneau libre",
+  "afinDe": "ne plus avoir à appeler le salon",
+  "criteres": [
+    {
+      "etantDonne": "un créneau libre mardi à 10 h",
+      "quand": "je le choisis et je confirme",
+      "alors": "le rendez-vous est enregistré"
+    }
+  ]
+}
