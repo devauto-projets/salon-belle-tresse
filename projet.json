@@ -1,0 +1,19 @@
+{
+  "nom": "Salon Belle Tresse",
+  "apparence": {
+    "clair": {
+      "accent": "#C2185B",
+      "surAccent": "#FFFFFF"
+    },
+    "sombre": {
+      "accent": "#EC6499",
+      "surAccent": "#0D1824"
+    },
+    "police": "moderne",
+    "formes": "arrondies",
+    "modeSombre": true,
+    "compacte": false,
+    "grandsCaracteres": false,
+    "tutoiement": false
+  }
+}

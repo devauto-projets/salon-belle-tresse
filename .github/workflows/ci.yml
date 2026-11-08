@@ -1,0 +1,90 @@
+# Vérifications de chaque PR et de la branche principale (règles de devAuto, D-124).
+# La branche principale exige « Analyse, types, tests, construction » et « Navigateur » au vert.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Droits minimaux : lecture seule du dépôt ; seule la publication de l'image écrit (paquets)
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  verifier:
+    name: Analyse, types, tests, construction
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1 (version : packageManager)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Mise en forme
+        run: pnpm exec prettier --check .
+      - name: Analyse du code (sécurité, accessibilité)
+        run: pnpm lint
+      - name: Types
+        run: pnpm typecheck
+      - name: Tests
+        run: pnpm test
+      - name: Construction
+        run: pnpm build
+
+  navigateur:
+    name: Navigateur (accessibilité, sécurité du contenu)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # Pas de --with-deps : la machine de GitHub a déjà les bibliothèques de Chrome
+      - run: pnpm exec playwright install chromium
+      - name: Téléphone et ordinateur, axe en clair et en sombre
+        run: pnpm e2e
+
+  image:
+    name: Image (ghcr.io)
+    # Seulement après une fusion sur la branche principale, et seulement si tout est vert
+    if: github.event_name == 'push'
+    needs: [verifier, navigateur]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Construire et publier
+        env:
+          JETON: ${{ secrets.GITHUB_TOKEN }}
+          ACTEUR: ${{ github.actor }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA::7}"
+          printf '%s' "$JETON" | docker login ghcr.io -u "$ACTEUR" --password-stdin
+          docker build -t "$image" .
+          docker push "$image"
+          echo "Image publiée : $image" >> "$GITHUB_STEP_SUMMARY"
